@@ -4,18 +4,27 @@ const apiUrl = `https://api.jsonbin.io/v3/b/${binId}`;
 
 // Fetch users from database
 async function getUsers() {
-    let response = await fetch(apiUrl, { headers: { "X-Master-Key": apiKey } });
-    let data = await response.json();
-    return data.record.users || [];
+    try {
+        let response = await fetch(apiUrl, { headers: { "X-Master-Key": apiKey } });
+        let data = await response.json();
+        return data.record.users || [];
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
+    }
 }
 
 // Save users back to the database
 async function saveUsers(users) {
-    await fetch(apiUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "X-Master-Key": apiKey },
-        body: JSON.stringify({ users })
-    });
+    try {
+        await fetch(apiUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "X-Master-Key": apiKey },
+            body: JSON.stringify({ users })
+        });
+    } catch (error) {
+        console.error("Error saving users:", error);
+    }
 }
 
 // SIGNUP FUNCTION
@@ -60,7 +69,7 @@ window.onload = async () => {
         // LOGOUT FUNCTION
         document.getElementById("logout").addEventListener("click", () => {
             localStorage.removeItem("loggedInUser");
-            window.location.href = "index.html";
+            location.reload();
         });
     }
 };
@@ -81,8 +90,37 @@ document.getElementById("studyForm")?.addEventListener("submit", async (e) => {
     let userData = users.find(u => u.username === user);
     
     if (userData) {
+        // Ensure plans array exists
+        if (!userData.plans) {
+            userData.plans = [];
+        }
+
         userData.plans.push({ subject, time });
         await saveUsers(users);
         alert("Study plan added successfully!");
+
+        // Reload page to reflect new study plan
+        location.reload();
     }
 });
+
+// DISPLAY STUDY PLANS
+async function displayStudyPlans() {
+    let user = localStorage.getItem("loggedInUser");
+    if (!user) return;
+
+    let users = await getUsers();
+    let userData = users.find(u => u.username === user);
+
+    if (userData?.plans?.length) {
+        let planList = document.getElementById("studyPlans");
+        planList.innerHTML = "";
+        userData.plans.forEach(plan => {
+            let li = document.createElement("li");
+            li.textContent = `${plan.subject} - ${plan.time}`;
+            planList.appendChild(li);
+        });
+    }
+}
+
+window.onload = displayStudyPlans;
