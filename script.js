@@ -1,126 +1,132 @@
-const binId = "67e064ec8561e97a50f17061";
-const apiKey = "$2a$10$9lovVKvnl4Bu3l2cw0/.6Osl604XMjJ14bPtG3EHFU8OUAOdhwJ0C";
-const apiUrl = `https://api.jsonbin.io/v3/b/${binId}`;
+const API_KEY = "$2a$10$9lovVKvnl4Bu3l2cw0/.6Osl604XMjJ14bPtG3EHFU8OUAOdhwJ0C";
+const BIN_ID = "67e064ec8561e97a50f17061";
+const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-// Fetch users from database
-async function getUsers() {
+// Store logged-in user
+let loggedInUser = null;
+
+// Fetch user data from JSONBin
+async function fetchUserData() {
     try {
-        let response = await fetch(apiUrl, { headers: { "X-Master-Key": apiKey } });
+        let response = await fetch(API_URL, {
+            method: "GET",
+            headers: { "X-Master-Key": API_KEY }
+        });
         let data = await response.json();
-        return data.record.users || [];
+        return data.record.users;
     } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching user data:", error);
         return [];
     }
 }
 
-// Save users back to the database
-async function saveUsers(users) {
+// Update JSONBin with new user data
+async function updateUserData(users) {
     try {
-        await fetch(apiUrl, {
+        let response = await fetch(API_URL, {
             method: "PUT",
-            headers: { "Content-Type": "application/json", "X-Master-Key": apiKey },
+            headers: {
+                "X-Master-Key": API_KEY,
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({ users })
         });
+
+        if (!response.ok) throw new Error("Failed to update data.");
     } catch (error) {
-        console.error("Error saving users:", error);
+        console.error("Error updating user data:", error);
     }
 }
 
-// SIGNUP FUNCTION
-document.getElementById("signupForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    let username = document.getElementById("username").value;
-    let password = document.getElementById("password").value;
+// User Signup
+async function signup() {
+    let username = document.getElementById("signup-username").value;
+    let password = document.getElementById("signup-password").value;
+    let nickname = document.getElementById("signup-nickname").value;
+    let bio = document.getElementById("signup-bio").value;
 
-    let users = await getUsers();
+    let users = await fetchUserData();
 
-    // Check if the username already exists
     if (users.some(user => user.username === username)) {
-        alert("Username already taken. Try another one.");
+        alert("Username already exists. Please choose another one.");
         return;
     }
 
-    // Add new user to the database
-    users.push({ username, password, bio: "", plans: [] });
-    await saveUsers(users);
+    let newUser = {
+        username,
+        password,
+        nickname,
+        bio,
+        plans: []
+    };
 
-    localStorage.setItem("loggedInUser", username);
-    window.location.href = "index.html"; // Redirect to homepage
-});
+    users.push(newUser);
+    await updateUserData(users);
+    alert("Signup successful! You can now log in.");
+    window.location.href = "login.html"; // Redirect to login page
+}
 
-// AUTO UPDATE NAVBAR WHEN LOGGED IN
-window.onload = async () => {
-    let user = localStorage.getItem("loggedInUser");
-    let userNav = document.getElementById("userNav");
-
+// User Login
+async function login() {
+    let username = document.getElementById("login-username").value;
+    let password = document.getElementById("login-password").value;
+    
+    let users = await fetchUserData();
+    let user = users.find(u => u.username === username && u.password === password);
+    
     if (user) {
-        userNav.innerHTML = `
-            <div class="dropdown">
-                <button class="dropbtn">${user}</button>
-                <div class="dropdown-content">
-                    <a href="dashboard.html">Dashboard</a>
-                    <a href="profile.html">Profile</a>
-                    <a href="#" id="logout">Log Out</a>
-                </div>
-            </div>
-        `;
-
-        // LOGOUT FUNCTION
-        document.getElementById("logout").addEventListener("click", () => {
-            localStorage.removeItem("loggedInUser");
-            location.reload();
-        });
+        loggedInUser = user;
+        localStorage.setItem("loggedInUser", JSON.stringify(user));
+        window.location.href = "dashboard.html"; // Redirect to dashboard
+    } else {
+        alert("Invalid username or password.");
     }
-};
+}
 
-// STUDY PLAN FUNCTION
-document.getElementById("studyForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// Logout Function
+function logout() {
+    localStorage.removeItem("loggedInUser");
+    window.location.href = "login.html";
+}
+
+// Display Study Plans in a Table
+function displayStudyPlans() {
+    loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!loggedInUser) return;
+
+    let plansTable = document.getElementById("plans-table-body");
+    plansTable.innerHTML = "";
+
+    loggedInUser.plans.forEach((plan, index) => {
+        let row = plansTable.insertRow();
+        row.insertCell(0).innerText = plan.subject;
+        row.insertCell(1).innerText = plan.time;
+    });
+}
+
+// Add a New Study Plan
+async function addStudyPlan() {
     let subject = document.getElementById("subject").value;
     let time = document.getElementById("time").value;
-    let user = localStorage.getItem("loggedInUser");
 
-    if (!user) {
-        alert("Please log in first!");
-        return;
-    }
+    loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!loggedInUser) return;
 
-    let users = await getUsers();
-    let userData = users.find(u => u.username === user);
-    
-    if (userData) {
-        // Ensure plans array exists
-        if (!userData.plans) {
-            userData.plans = [];
-        }
+    loggedInUser.plans.push({ subject, time });
 
-        userData.plans.push({ subject, time });
-        await saveUsers(users);
-        alert("Study plan added successfully!");
+    let users = await fetchUserData();
+    let updatedUsers = users.map(user => 
+        user.username === loggedInUser.username ? loggedInUser : user
+    );
 
-        // Reload page to reflect new study plan
-        location.reload();
-    }
-});
-
-// DISPLAY STUDY PLANS
-async function displayStudyPlans() {
-    let user = localStorage.getItem("loggedInUser");
-    if (!user) return;
-
-    let users = await getUsers();
-    let userData = users.find(u => u.username === user);
-
-    if (userData?.plans?.length) {
-        let planList = document.getElementById("studyPlans");
-        planList.innerHTML = "";
-        userData.plans.forEach(plan => {
-            let li = document.createElement("li");
-            li.textContent = `${plan.subject} - ${plan.time}`;
-            planList.appendChild(li);
-        });
-    }
+    await updateUserData(updatedUsers);
+    localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+    displayStudyPlans();
 }
 
-window.onload = displayStudyPlans;
+// Load Study Plans on Dashboard
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.pathname.includes("dashboard.html")) {
+        displayStudyPlans();
+    }
+});
