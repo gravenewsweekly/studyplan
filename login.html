@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logout</title>
+    <title>Login</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>You have been logged out.</h2>
-    <script>
-        localStorage.removeItem("loggedInUser");
-        window.location.href = "login.html";
-    </script>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+    <script src="script.js"></script>
 </body>
 </html>
