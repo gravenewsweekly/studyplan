@@ -1,25 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>Dashboard</h1>
-    </header>
-
-    <main>
-        <h2>Add Study Plan</h2>
-        <form id="studyForm">
-            <input type="text" id="subject" placeholder="Enter Subject" required>
-            <input type="text" id="time" placeholder="Enter Study Time" required>
-            <button type="submit">Save Plan</button>
-        </form>
-    </main>
-
-    <script src="script.js"></script>
-</body>
-</html>
+<h2>Dashboard</h2>
+<button onclick="logout()">Logout</button>
+<h3>Add Study Plan</h3>
+<form onsubmit="addStudyPlan(); return false;">
+    <label for="subject">Subject:</label>
+    <input type="text" id="subject" required>
+    <label for="time">Time:</label>
+    <input type="text" id="time" required>
+    <button type="submit">Add Plan</button>
+</form>
+<h3>Your Study Plans</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Subject</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody id="plans-table-body"></tbody>
+</table>
