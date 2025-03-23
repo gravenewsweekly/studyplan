@@ -1,5 +1,5 @@
 const binId = "67e064ec8561e97a50f17061";
-const apiKey = "$2a$10$qjojQGEEZY/70dYrLzZt7.TPkF8J1vn3.wz4VlKQW7Npy1XYXZeo2";
+const apiKey = "$2a$10$9lovVKvnl4Bu3l2cw0/.6Osl604XMjJ14bPtG3EHFU8OUAOdhwJ0C";
 const apiUrl = `https://api.jsonbin.io/v3/b/${binId}`;
 
 // Fetch users from database
